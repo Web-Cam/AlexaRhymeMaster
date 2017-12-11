@@ -1,7 +1,7 @@
 /*
 	Template/ Example code: Benjamin Snoha /
 	Revision : Web-Cam
-	Title: Rhyme Gen
+	Title: Rhyme master
 */
 
 'use strict';
@@ -12,7 +12,7 @@ var score = 0; // clear this after every end, since lambda keeps this for a few 
 var wordlist = [];// the arrays to hold data for alexareturn()
 var alexaword = []; 
 var fallback = [];
-var level = "easy"; // set easy as default
+var level = "easy"; // set easy as default also default in switch incase kids dont know rhyme
 var allwords = []; // the array for all the words that can be used for the session. 
 var start = true;
 
@@ -38,7 +38,7 @@ exports.handler = function(event, context, callback) {
 
 var handlers = {
 'easy': function() {
-	level = "easy";
+	level = "easy"; // these are called in utterances. Not too important, since most people want easy!
 	this.emit(':ask',"Ok, level set to easy, now say a word to begin or ask for help for instructions.");
 	},
 'med': function() {
