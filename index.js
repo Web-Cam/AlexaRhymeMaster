@@ -22,7 +22,7 @@ var start = true;
 var languageStrings = {
     "en": {
         "translation": {
-            "SKILL_NAME": "Rhyme Generator",
+            "SKILL_NAME": "Rhyme Generator", // Changle below to SSML instead of dots later...
             "HELP_MESSAGE": "Just say any word ................................. then I will rhyme it ...................................................next say a rhyme for that word ......................................Dont say any words I said though.......................Freemode will let you say anything................................ while hard is for masters only! ............. Now .. say a word to begin",
             "HELP_REPROMPT": "Just try to say a word like Boat!",
             "STOP_MESSAGE": "Goodbye!"
