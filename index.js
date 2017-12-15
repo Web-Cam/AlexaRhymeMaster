@@ -11,14 +11,14 @@ var APP_ID = '';
 var score = 0; // clear this after every end, since lambda keeps this for a few mins.
 var tries = 0;
 var wordlist = [];// the arrays to hold data for alexareturn()
-var debug = [];
-var pusher = 0;
-var alexaword = []; 
-var fallback = [];
-var test = ""; //remove
-var level = "free"; // set easy as default
-var allwords = []; // the array for all the words that can be used for the session. 
-var start = true;
+var debug = []; //This is temp. fro debugging
+var pusher = 0; // Variable that changes wheather or not to push to allwords, Note : this is used only for med and hard levels
+var alexaword = []; //All words that Alexa has responded with.
+var fallback = []; //This also stores words alexa has reponded too, but these are meant to be popped. This var makes sure Alexa doesnt say same word twice
+var test = ""; //remove later
+var level = "free"; // set free as default level, more choices in main selection.
+var allwords = []; // the array for all the words that can be used for the session. ALWAYS UPDATED!!!!
+var start = true;//Controls a bit strange, used in wordcheck since first word won;t rhyme with itelf/
 
 var languageStrings = {
     "en": {
@@ -42,10 +42,10 @@ exports.handler = function(event, context, callback) {
 
 var handlers = {
 'repeat': function(){
-if (allwords[0] == null || allwords[0] === "undefined" || allwords[0] == ''){ 
-		this.emit(':ask', 'Please say a word first');}
-		
-		else{
+if (allwords[0] == null || allwords[0] === "undefined" || allwords[0] == '') 
+{ 
+		this.emit(':ask', 'Please say a word first');
+			} else {
 this.emit(':ask', 'The word you are trying to rhyme with is.......... '+ allwords[0] + ' The last word I said was..............' + alexaword[alexaword.length-1]);
 		}
 },
@@ -78,51 +78,41 @@ this.emit(':ask', 'The word you are trying to rhyme with is.......... '+ allword
 	level = "hard"
 	this.emit(':ask',"Ok, level set to hard, now say a word to begin or ask for help for instructions.");
     },
-'WhatAmI': function() {
-	if (fallback.length == 0) {this.emit(':ask',"You didnt say a word yet!" );}
-	else {this.emit(':ask',"You are finding words that rhyme with ...." + fallback[fallback.length]);}
-    },
-'Test': function() {
+'Test': function() { // function to debug through alexa.
 	this.emit(':ask',  allwords + "         "+  debug[debug.length-1] + "     " + allwords.includes(debug[debug.length-1]));
     },
-	'Testa': function() {
-      //if (alexareturn() === true)
-		 // this.emit(':ask', "true")
-	 this.emit(':ask',"hi")
-    },
-'kill': function(){ // change to reset
-	killalexa();
-	this.emit(':ask',"success")
+'kill': function(){ // change to reset or reset in utterences...
+	killalexa();// reset all
+	this.emit(':ask',"OK...... I have reset all the data ......... Now say a word to start again.") 
 },
-   'LaunchRequest': function() {
+	'LaunchRequest': function() {
         killalexa();
-		this.emit(':ask', "Welcome to Rhyme Master. Here are the rules, you say a word and I will find a rhyme. If you cant think of a rhyme or say something that I said you lose! Now select your level, say freemode ....easy ....Medium .....Or .....hard!");
+	this.emit(':ask', "Welcome to Rhyme Master. Here are the rules, you say a word and I will find a rhyme. If you cant think of a rhyme or say something that I said you lose! Now select your level, say freemode ....easy ....Medium .....Or .....hard!");
         this.emit('GetNewWordIntent');
 		
     },
 	'EndGameUser': function() {
         this.emit(':ask', "I win! Better luck next time try to beat your score of " + score + "Would you like to play again ?"); // Pulled ending words instead of calling unhandled, now call this instead.. Put call words in utterances
-		killalexa();
+	killalexa();
    },
 'GetNewWordIntent': function() {
         var wordInput = this.event.request.intent.slots.customWord.value;
-		wordlist.push(wordInput);
-		var RNG = Math.floor(Math.random() * 25);
-		if (wordInput == null || wordInput === "undefined" || wordInput == '') { //Alexa doesnt understand the word, so User loses.
+	wordlist.push(wordInput);
+	var RNG = Math.floor(Math.random() * 25);
+	if (wordInput == null || wordInput === "undefined" || wordInput == '') { //Alexa doesnt understand the word, so User loses.
             this.emit('Unhandled'); //send to unhandled handler
-        } else {
-           //if (level = "easy"){wordcheck()= true;}
+       			} else {
+			//Sees if word rhymes with previous words, finniky on alexa, not perfect voice recognition.	
 		   if (wordcheck(wordInput) === false){this.emit(':ask','please say a word that rhymes with the previous words','Time is almost up.')}
 		   // Create speech output
             getNextWord(wordInput, (speechOutput) => {
                 if (speechOutput == '') {
                     this.emit('Unhandled');
-                } else {
+               		 } else {
 					if (RNG == 9){ 
 					this.emit(':ask', "Hmmmm I cant think of any rhymes Congratulations.......... you win........ with a score of...." + score + "want to play again?");
 					killalexa();
-					}
-					else {
+					} else {
 						if(alexareturn()){// make a switch function
 						tries += 1;
 						if (tries > 1){
@@ -149,23 +139,20 @@ this.emit(':ask', 'The word you are trying to rhyme with is.......... '+ allword
 						getNextWord(fallback, (speechOutput) => {
 						if(speechOutput == ''){
 							this.emit('Unhandled');
-								}
-								else{
+								} else {
 							this.emit(':ask', speechOutput );
-									}
+								}
 							});	
 
-						}
-							
-					else{score += 1
-                    alexaword.push(speechOutput);
-					fallback.push(speechOutput);
-                    this.emit(':ask', speechOutput );
+						} else {
+			score += 1;
+                    	alexaword.push(speechOutput); // Push some words to the arrays.
+			fallback.push(speechOutput);
+                    	this.emit(':ask', speechOutput );
 					
 					}
-                
-                }
-				}
+                			}
+					}
             });
         }
     },
@@ -183,12 +170,12 @@ this.emit(':ask', 'The word you are trying to rhyme with is.......... '+ allword
     'Unhandled': function() {
         console.log("UNHANDLED");
         //If the users sentence really made no sense at all, then just choose a random word to finish with.
-        getNextWord("yellow", (speechOutput) => {
+        getNextWord("yellow", (speechOutput) => { // No need right now future Use!!
             if (speechOutput == '') {
                 this.emit('Unhandled');
             } else {
                 this.emit(':ask', " There are no rhymes for that word ....You Lose I win your score was " + score +  ".... Try Again? " );
-				killalexa();
+		killalexa();
             }
         });
     }
@@ -196,15 +183,13 @@ this.emit(':ask', 'The word you are trying to rhyme with is.......... '+ allword
 
 //Gets the rhyme for a single word
 function getNextWord(contextWord, _callback) {
-	test = contextWord;
+	test = contextWord; // just for some debug can safely remove later..
 	var options = {
         url: 'https://api.datamuse.com/words?rel_rhy=' + levelSel(contextWord) // if no max is set, it tends to return off topic words like boat rhymes with right to vote.
-
 	};
-
-trimArray();
+	trimArray();// Need to update, but removes spaces between words!
     request(options, (error, response, body) => {
-		if (!error && response.statusCode == 200) {
+	if (!error && response.statusCode == 200) {
             //Get the info
             var info = JSON.parse(body);
             
