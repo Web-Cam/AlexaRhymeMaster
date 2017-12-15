@@ -15,6 +15,7 @@ var debug = [];
 var pusher = 0;
 var alexaword = []; 
 var fallback = [];
+var test = ""; //remove
 var level = "free"; // set easy as default
 var allwords = []; // the array for all the words that can be used for the session. 
 var start = true;
@@ -22,7 +23,7 @@ var start = true;
 var languageStrings = {
     "en": {
         "translation": {
-            "SKILL_NAME": "Rhyme Generator", // Changle below to SSML instead of dots later...
+            "SKILL_NAME": "Rhyme Generator",
             "HELP_MESSAGE": "Just say any word ................................. then I will rhyme it ...................................................next say a rhyme for that word ......................................Dont say any words I said though.......................Freemode will let you say anything................................ while hard is for masters only! ............. Now .. say a word to begin",
             "HELP_REPROMPT": "Just try to say a word like Boat!",
             "STOP_MESSAGE": "Goodbye!"
@@ -40,7 +41,16 @@ exports.handler = function(event, context, callback) {
 };
 
 var handlers = {
-'yes': function() {
+'repeat': function(){
+if (allwords[0] == null || allwords[0] === "undefined" || allwords[0] == ''){ 
+		this.emit(':ask', 'Please say a word first');}
+		
+		else{
+this.emit(':ask', 'The word you are trying to rhyme with is.......... '+ allwords[0] + ' The last word I said was..............' + alexaword[alexaword.length-1]);
+		}
+},
+
+'yes': function(){
 	killalexa();
 	this.emit(':ask',"Ok! lets play again say another word to begin!");
 	},
@@ -73,7 +83,7 @@ var handlers = {
 	else {this.emit(':ask',"You are finding words that rhyme with ...." + fallback[fallback.length]);}
     },
 'Test': function() {
-	this.emit(':ask',debug[debug.length-1] + "   " + allwords.includes(debug[debug.length-1]) + allwords +  pusher);
+	this.emit(':ask',  allwords + "         "+  debug[debug.length-1] + "     " + allwords.includes(debug[debug.length-1]));
     },
 	'Testa': function() {
       //if (alexareturn() === true)
@@ -96,9 +106,9 @@ var handlers = {
    },
 'GetNewWordIntent': function() {
         var wordInput = this.event.request.intent.slots.customWord.value;
-		
+		wordlist.push(wordInput);
 		var RNG = Math.floor(Math.random() * 25);
-        if (wordInput == null || wordInput === "undefined" || wordInput == '') { //Alexa doesnt understand the word, so User loses.
+		if (wordInput == null || wordInput === "undefined" || wordInput == '') { //Alexa doesnt understand the word, so User loses.
             this.emit('Unhandled'); //send to unhandled handler
         } else {
            //if (level = "easy"){wordcheck()= true;}
@@ -131,7 +141,7 @@ var handlers = {
 						wordlist.pop();
 						tries = 0;
 						}
-						else {this.emit(':ask',"I already said that word try again?", 'Dont give up! just say another word');
+						else {this.emit(':ask',"You already said that word try again?", 'Dont give up! just say another word');
 						wordlist.pop();
 						}}
 						if(compalex()){
@@ -186,14 +196,15 @@ var handlers = {
 
 //Gets the rhyme for a single word
 function getNextWord(contextWord, _callback) {
-	
+	test = contextWord;
 	var options = {
         url: 'https://api.datamuse.com/words?rel_rhy=' + levelSel(contextWord) // if no max is set, it tends to return off topic words like boat rhymes with right to vote.
-    };
+
+	};
 
 trimArray();
     request(options, (error, response, body) => {
-        if (!error && response.statusCode == 200) {
+		if (!error && response.statusCode == 200) {
             //Get the info
             var info = JSON.parse(body);
             
@@ -294,18 +305,8 @@ for (var i = 0; i < alexaword.length; i++) {
 		else{return false;}
 	}	
 	
-function repeater(){
-			getNextWord(fallback, (speechOutput) => {
-			if(speechOutput == ''){
-				this.emit('Unhandled');
-			}
-			else{
-				this.emit(':ask', speechOutput );
-			}
-		});	
-	
-	
-}
+
+
 function wordcheck(wordInput){ // function that will check if the word a user said is in the array.
 debug.push(wordInput);	
 console.log(wordInput + "   " + allwords);
@@ -329,6 +330,7 @@ else{
 }
 }
 }
+
 function trimArray()
 {
     for(var i=0;i<allwords.length;i++)
@@ -353,8 +355,7 @@ switch(level){
 	break;
 	default:
 	return contextWord + '&nry=' + contextWord + '&max=300'
-}
-
+	}
 }
 function wordlistRan(){
 var i = 1;
